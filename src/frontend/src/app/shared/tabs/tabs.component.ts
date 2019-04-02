@@ -12,19 +12,22 @@ import { TabDragService } from '../client/v1/tab-drag.service';
 })
 export class TabsComponent implements AfterViewInit, OnDestroy {
   // margin 指的是tabs-box-inner的margin值。
-  margin: number = 40;
+  margin = 40;
   listStyle: ListStyle = new ListStyle();
-  showViewPager: boolean = false;
+  showViewPager = false;
   tabsContent: Element;
   tabsList: Element;
   tabsContentWidth: number;
   tabsListWidth: number;
-  firstEnter: boolean = true;
+  firstEnter = true;
   resizeTimer: any;
-  prevDisabled: boolean = true;
-  nextDisabled: boolean = false;
+  prevDisabled = true;
+  nextDisabled = false;
   dragSubscribe: Array<any> = new Array();
-  eventList: Array<any> = new Array();
+  eventList: Array<Function> = new Array();
+  clickList: Array<Function> = new Array();
+  _searchContent: string;
+  _tabs: QueryList<any>;
 
   constructor(
     private el: ElementRef,
@@ -37,7 +40,8 @@ export class TabsComponent implements AfterViewInit, OnDestroy {
         direction => {
           if (direction === 'right') {
             if (this.listStyle.translateX > (this.tabsContentWidth - this.tabsListWidth)) {
-              this.listStyle.translateX = this.listStyle.translateX < (this.tabsContentWidth - this.tabsListWidth + 10) ? this.tabsContentWidth - this.tabsListWidth : this.listStyle.translateX - 10;
+              this.listStyle.translateX = this.listStyle.translateX < (this.tabsContentWidth - this.tabsListWidth + 10) ?
+                this.tabsContentWidth - this.tabsListWidth : this.listStyle.translateX - 10;
             }
           } else if (direction === 'left') {
             if (this.listStyle.translateX < 0) {
@@ -49,10 +53,37 @@ export class TabsComponent implements AfterViewInit, OnDestroy {
     );
   }
 
+  get tabsNum(): number {
+    return this._tabs.length;
+  }
+
+  get searchContent() {
+    return this._searchContent;
+  }
+
+  set searchContent(value: string) {
+    if (value !== this._searchContent) {
+      this._searchContent = value;
+      this.filtertabs();
+    }
+  }
+
+  filtertabs() {
+    this._tabs.forEach(item => {
+      const el = item.el.nativeElement;
+      el.classList.remove('hide');
+      if (el.innerText.indexOf(this.searchContent) === -1) {
+        el.classList.add('hide');
+      }
+      this.boxResize();
+    });
+  }
+
   ngOnDestroy() {
     this.dragSubscribe.forEach(subscribe => {
       subscribe.unsubscribe();
     });
+    this.removeClickEvent();
     this.eventList.forEach(event => {
       event();
     });
@@ -60,11 +91,13 @@ export class TabsComponent implements AfterViewInit, OnDestroy {
   }
 
   @ContentChildren(TabComponent) set tabs(tabs: QueryList<any>) {
+    this._tabs = tabs;
+    this.removeClickEvent();
     this.addClickEvent(tabs);
     this.setActive(tabs);
-    if (!this.firstEnter) this.boxResize();
+    if (!this.firstEnter) { this.boxResize(); }
     this.firstEnter = false;
-  };
+  }
 
   prevEnter() {
     if (this.listStyle.translateX) {
@@ -94,9 +127,17 @@ export class TabsComponent implements AfterViewInit, OnDestroy {
     return this.listStyle.translateX ? `translateX(${this.listStyle.translateX}px)` : '';
   }
 
+  removeClickEvent() {
+    this.clickList.forEach(func => {
+      func();
+    });
+  }
+
   addClickEvent(tmpList: QueryList<any>) {
     tmpList.forEach((template, index) => {
-      this.eventManager.addEventListener(template.el.nativeElement, 'click', this.setActive.bind(this, tmpList));
+      this.clickList.push(
+        this.eventManager.addEventListener(template.el.nativeElement, 'click', this.setActive.bind(this, tmpList))
+      );
     });
   }
 
@@ -122,7 +163,7 @@ export class TabsComponent implements AfterViewInit, OnDestroy {
       this.showViewPager = true;
       this.tabsContentWidth -= 2 * this.margin;
     }
-    if (typeof window !== 'undefined') window.onresize = this.boxResize.bind(this);
+    if (typeof window !== 'undefined') { window.onresize = this.boxResize.bind(this); }
     this.dragService.init(this.el.nativeElement);
     this.eventList.push(
       this.eventManager.addEventListener(this.document.querySelector('.nav-trigger'), 'click', this.boxResize.bind(this, true))

@@ -28,6 +28,12 @@ export const KubeResourceSecret: KubeResourcesName = 'secrets';
 export const KubeResourceService: KubeResourcesName = 'services';
 export const KubeResourceStatefulSet: KubeResourcesName = 'statefulsets';
 export const KubeResourceEndpoint: KubeResourcesName = 'endpoints';
+export const KubeResourceStorageClass: KubeResourcesName = 'storageclasses';
+export const KubeResourceRole: KubeResourcesName = 'roles';
+export const KubeResourceRoleBinding: KubeResourcesName = 'rolebindings';
+export const KubeResourceClusterRole: KubeResourcesName = 'clusterroles';
+export const KubeResourceClusterRoleBinding: KubeResourcesName = 'clusterrolebindings';
+export const KubeResourceServiceAccount: KubeResourcesName = 'serviceaccounts';
 
 export const LoginTokenKey = 'wayne_token';
 
@@ -177,7 +183,9 @@ export const enum ConfirmationTargets {
   DAEMONSET_TPL,
   TRASH_DAEMONSET_TPL,
   NOTIFICATION,
-  NODE
+  NODE,
+  HPA,
+  ENDPOINT
 }
 
 export const enum ActionType {

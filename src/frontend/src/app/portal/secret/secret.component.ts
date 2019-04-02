@@ -1,11 +1,12 @@
 import { AfterContentInit, Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { State } from '@clr/angular';
+import { ClrDatagridStateInterface } from '@clr/angular';
 import {
   ConfirmationButtons,
   ConfirmationState,
   ConfirmationTargets,
   httpStatusCode,
+  KubeResourceSecret,
   PublishType,
   syncStatusInterval,
   TemplateState
@@ -13,7 +14,7 @@ import {
 import { MessageHandlerService } from '../../shared/message-handler/message-handler.service';
 import { ListSecretComponent } from './list-secret/list-secret.component';
 import { CreateEditSecretComponent } from './create-edit-secret/create-edit-secret.component';
-import { Observable } from 'rxjs/Observable';
+import { combineLatest } from 'rxjs';
 import { SecretClient } from '../../shared/client/v1/kubernetes/secret';
 import { AppService } from '../../shared/client/v1/app.service';
 import { SecretService } from '../../shared/client/v1/secret.service';
@@ -33,6 +34,7 @@ import { PageState } from '../../shared/page/page-state';
 import { TabDragService } from '../../shared/client/v1/tab-drag.service';
 import { OrderItem } from '../../shared/model/v1/order';
 import { TranslateService } from '@ngx-translate/core';
+import { KubernetesClient } from '../../shared/client/v1/kubernetes/kubernetes';
 
 const showState = {
   'create_time': {hidden: false},
@@ -55,7 +57,7 @@ export class SecretComponent implements AfterContentInit, OnDestroy, OnInit {
   createEdit: CreateEditSecretComponent;
   secretId: number;
   pageState: PageState = new PageState();
-  isOnline: boolean = false;
+  isOnline = false;
   secrets: Secret[];
   secretTpls: SecretTpl[];
   app: App;
@@ -74,6 +76,7 @@ export class SecretComponent implements AfterContentInit, OnDestroy, OnInit {
               private publishService: PublishService,
               private appService: AppService,
               private secretClient: SecretClient,
+              private kubernetesClient: KubernetesClient,
               private publishHistoryService: PublishHistoryService,
               public authService: AuthService,
               private deletionDialogService: ConfirmationDialogService,
@@ -85,13 +88,15 @@ export class SecretComponent implements AfterContentInit, OnDestroy, OnInit {
               public translate: TranslateService,
               private messageHandlerService: MessageHandlerService) {
     this.tabScription = this.tabDragService.tabDragOverObservable.subscribe(over => {
-      if (over) this.tabChange();
+      if (over) {
+        this.tabChange();
+      }
     });
     this.subscription = deletionDialogService.confirmationConfirm$.subscribe(message => {
       if (message &&
         message.state === ConfirmationState.CONFIRMED &&
         message.source === ConfirmationTargets.SECRET) {
-        let secretId = message.data;
+        const secretId = message.data;
         this.secretService.deleteById(secretId, this.app.id)
           .subscribe(
             response => {
@@ -119,7 +124,9 @@ export class SecretComponent implements AfterContentInit, OnDestroy, OnInit {
   initShow() {
     this.showList = [];
     Object.keys(this.showState).forEach(key => {
-      if (!this.showState[key].hidden) this.showList.push(key);
+      if (!this.showState[key].hidden) {
+        this.showList.push(key);
+      }
     });
   }
 
@@ -140,11 +147,13 @@ export class SecretComponent implements AfterContentInit, OnDestroy, OnInit {
   tabChange() {
     const orderList = [].slice.call(this.el.nativeElement.querySelectorAll('.tabs-item')).map((item, index) => {
       return {
-        id: parseInt(item.id),
+        id: parseInt(item.id, 10),
         order: index
       };
     });
-    if (this.orderCache && JSON.stringify(this.orderCache) === JSON.stringify(orderList)) return;
+    if (this.orderCache && JSON.stringify(this.orderCache) === JSON.stringify(orderList)) {
+      return;
+    }
     this.secretService.updateOrder(this.app.id, orderList).subscribe(
       response => {
         if (response.data === 'ok!') {
@@ -169,7 +178,7 @@ export class SecretComponent implements AfterContentInit, OnDestroy, OnInit {
     } else {
       this.orderCache = [].slice.call(this.el.nativeElement.querySelectorAll('.tabs-item')).map((item, index) => {
         return {
-          id: parseInt(item.id),
+          id: parseInt(item.id, 10),
           order: index
         };
       });
@@ -189,14 +198,17 @@ export class SecretComponent implements AfterContentInit, OnDestroy, OnInit {
   syncStatus(): void {
     if (this.secretTpls && this.secretTpls.length > 0) {
       for (let i = 0; i < this.secretTpls.length; i++) {
-        let tpl = this.secretTpls[i];
+        const tpl = this.secretTpls[i];
         if (tpl.status && tpl.status.length > 0) {
           for (let j = 0; j < tpl.status.length; j++) {
-            let status = tpl.status[j];
-            if (status.errNum > 2) continue;
-            this.secretClient.get(this.appId, status.cluster, this.cacheService.kubeNamespace, tpl.name).subscribe(
+            const status = tpl.status[j];
+            if (status.errNum > 2) {
+              continue;
+            }
+            this.kubernetesClient.get(status.cluster, KubeResourceSecret, tpl.name,
+              this.cacheService.kubeNamespace, this.appId.toString()).subscribe(
               response => {
-                let code = response.statusCode | response.status;
+                const code = response.statusCode || response.status;
                 if (code === httpStatusCode.NoContent) {
                   this.secretTpls[i].status[j].state = TemplateState.NOT_FOUND;
                   return;
@@ -236,10 +248,10 @@ export class SecretComponent implements AfterContentInit, OnDestroy, OnInit {
   }
 
   initSecret(refreshTpl?: boolean) {
-    this.appId = parseInt(this.route.parent.snapshot.params['id']);
-    this.secretId = parseInt(this.route.snapshot.params['secretId']);
-    let namespaceId = this.cacheService.namespaceId;
-    Observable.combineLatest(
+    this.appId = parseInt(this.route.parent.snapshot.params['id'], 10);
+    this.secretId = parseInt(this.route.snapshot.params['secretId'], 10);
+    const namespaceId = this.cacheService.namespaceId;
+    combineLatest(
       this.secretService.list(PageState.fromState({sort: {by: 'id', reverse: false}}, {pageSize: 1000}), 'false', this.appId + ''),
       this.appService.getById(this.appId, namespaceId)
     ).subscribe(
@@ -263,8 +275,8 @@ export class SecretComponent implements AfterContentInit, OnDestroy, OnInit {
       if (!secretId) {
         return this.secrets[0].id;
       }
-      for (let c of this.secrets) {
-        if (secretId == c.id) {
+      for (const c of this.secrets) {
+        if (secretId === c.id) {
           return secretId;
         }
       }
@@ -301,35 +313,36 @@ export class SecretComponent implements AfterContentInit, OnDestroy, OnInit {
     this.tabScription.unsubscribe();
   }
 
-  retrieve(state?: State): void {
+  retrieve(state?: ClrDatagridStateInterface): void {
     if (!this.secretId) {
       return;
     }
     if (state) {
-      this.pageState = PageState.fromState(state, {totalPage: this.pageState.page.totalPage, totalCount: this.pageState.page.totalCount});
+      this.pageState = PageState.fromState(state,
+        {totalPage: this.pageState.page.totalPage, totalCount: this.pageState.page.totalCount});
     }
     this.pageState.params['deleted'] = false;
     this.pageState.params['isOnline'] = this.isOnline;
-    Observable.combineLatest(
+    combineLatest(
       this.secretTplService.listPage(this.pageState, this.app.id, this.secretId.toString()),
       this.publishService.listStatus(PublishType.SECRET, this.secretId)
     ).subscribe(
       response => {
-        let status = response[1].data;
+        const status = response[1].data;
         this.publishStatus = status;
-        let tplStatusMap = {};
+        const tplStatusMap = {};
         if (status && status.length > 0) {
-          for (let state of status) {
-            if (!tplStatusMap[state.templateId]) {
-              tplStatusMap[state.templateId] = Array<PublishStatus>();
+          for (const stat of status) {
+            if (!tplStatusMap[stat.templateId]) {
+              tplStatusMap[stat.templateId] = Array<PublishStatus>();
             }
-            state.errNum = 0;
-            tplStatusMap[state.templateId].push(state);
+            stat.errNum = 0;
+            tplStatusMap[stat.templateId].push(stat);
           }
         }
         this.tplStatusMap = tplStatusMap;
 
-        let tpls = response[0].data;
+        const tpls = response[0].data;
         this.pageState.page.totalPage = tpls.totalPage;
         this.pageState.page.totalCount = tpls.totalCount;
         this.buildTplList(tpls.list);
@@ -344,7 +357,7 @@ export class SecretComponent implements AfterContentInit, OnDestroy, OnInit {
     if (this.publishStatus && this.publishStatus.length > 0) {
       this.messageHandlerService.warning('已上线加密字典无法删除，请先下线加密字典！');
     } else {
-      let deletionMessage = new ConfirmationMessage(
+      const deletionMessage = new ConfirmationMessage(
         '删除加密字典确认',
         '是否确认删除加密字典?',
         this.secretId,
@@ -357,11 +370,11 @@ export class SecretComponent implements AfterContentInit, OnDestroy, OnInit {
 
   buildTplList(tpls: SecretTpl[]) {
     if (tpls) {
-      for (let tpl of tpls) {
-        let metaData = tpl.metaData ? tpl.metaData : '{}';
+      for (const tpl of tpls) {
+        const metaData = tpl.metaData ? tpl.metaData : '{}';
         tpl.clusters = JSON.parse(metaData).clusters;
 
-        let publishStatus = this.tplStatusMap[tpl.id];
+        const publishStatus = this.tplStatusMap[tpl.id];
         if (publishStatus && publishStatus.length > 0) {
           tpl.status = publishStatus;
         }
@@ -390,10 +403,10 @@ export class SecretComponent implements AfterContentInit, OnDestroy, OnInit {
   }
 
   openModal(): void {
-    this.createEdit.newOrEditSecret(this.app);
+    this.createEdit.newOrEditResource(this.app, []);
   }
 
   editSecret() {
-    this.createEdit.newOrEditSecret(this.app, this.secretId);
+    this.createEdit.newOrEditResource(this.app, [], this.secretId);
   }
 }

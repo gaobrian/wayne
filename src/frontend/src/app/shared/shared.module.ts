@@ -24,7 +24,6 @@ import { AceEditorComponent } from './ace-editor/ace-editor.component';
 import { AceEditorBoxComponent } from './ace-editor/ace-editor-box/ace-editor-box.component';
 import { AceEditorService } from './ace-editor/ace-editor.service';
 import { ModalOperateComponent } from './modal-operate/modal-operate.component';
-import { SwitchComponent } from './switch/switch.component';
 import { ProgressComponent } from './progress/progress.component';
 import { FloatWindowComponent } from './float-window/float-window.component';
 import { FloatWindowItemComponent } from './float-window/float-window-item/float-window-item.component';
@@ -36,7 +35,6 @@ import { NavigationComponent } from './navigation/navigation.component';
 import { TabDragService } from './client/v1/tab-drag.service';
 import { SelectCopyService } from './client/v1/select-copy.service';
 import { CardComponent } from './card/card.compontent';
-import { BoxComponent } from './box/box.component';
 import { InputComponent } from './input/input.component';
 import { SelectComponent } from './select/select.component';
 import { OptionComponent } from './select/option/option.component';
@@ -51,7 +49,11 @@ import { DiffComponent } from './diff/diff.component';
 import { DiffService } from './diff/diff.service';
 import { ResourceLimitModule } from './component/resource-limit/resource-limit.module';
 import { EchartsModule } from './echarts/echars.module';
-
+import { ListPodComponent } from './list-pod/list-pod.component';
+import { ListEventComponent } from './list-event/list-event.component';
+import { SideNavService } from './client/v1/sidenav.service';
+import { SearchSectionComponent } from './tabs/search-section/search-section.component';
+import { CollapseModule } from './collapse/collapse.module';
 @NgModule({
   imports: [
     BrowserAnimationsModule,
@@ -62,7 +64,8 @@ import { EchartsModule } from './echarts/echars.module';
     ResourceLimitModule,
     HttpClientModule,
     EchartsModule,
-    ClarityModule.forRoot(),
+    ClarityModule,
+    CollapseModule
   ],
   declarations: [
     PageNotFoundComponent,
@@ -74,7 +77,6 @@ import { EchartsModule } from './echarts/echars.module';
     PaginateComponent,
     BreadcrumbComponent,
     AceEditorComponent,
-    SwitchComponent,
     AceEditorBoxComponent,
     ModalOperateComponent,
     ProgressComponent,
@@ -83,7 +85,6 @@ import { EchartsModule } from './echarts/echars.module';
     TipDirective,
     NavigationComponent,
     CardComponent,
-    BoxComponent,
     InputComponent,
     SelectComponent,
     OptionComponent,
@@ -93,7 +94,10 @@ import { EchartsModule } from './echarts/echars.module';
     DropDownComponent,
     DropdownItemComponent,
     RelativeTimeFilterPipe,
-    DiffComponent
+    DiffComponent,
+    ListPodComponent,
+    ListEventComponent,
+    SearchSectionComponent
   ],
   exports: [
     BrowserAnimationsModule,
@@ -107,7 +111,6 @@ import { EchartsModule } from './echarts/echars.module';
     MessageComponent,
     TabsComponent,
     TabComponent,
-    SwitchComponent,
     BreadcrumbComponent,
     PaginateComponent,
     DualListBoxModule,
@@ -121,7 +124,6 @@ import { EchartsModule } from './echarts/echars.module';
     TipDirective,
     NavigationComponent,
     CardComponent,
-    BoxComponent,
     InputComponent,
     SelectComponent,
     OptionComponent,
@@ -132,9 +134,14 @@ import { EchartsModule } from './echarts/echars.module';
     DropdownItemComponent,
     RelativeTimeFilterPipe,
     TranslateModule,
-    DiffComponent
+    DiffComponent,
+    ListPodComponent,
+    ListEventComponent,
+    SearchSectionComponent,
+    CollapseModule
   ],
   providers: [
+    SideNavService,
     TipService,
     MessageService,
     StorageService,

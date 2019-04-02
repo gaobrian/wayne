@@ -1,19 +1,20 @@
 import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, ViewChild } from '@angular/core';
-import { State } from '@clr/angular';
+import { ClrDatagridStateInterface } from '@clr/angular';
 import { MessageHandlerService } from '../../../shared/message-handler/message-handler.service';
 import { ConfirmationMessage } from '../../../shared/confirmation-dialog/confirmation-message';
 import {
   ConfirmationButtons,
   ConfirmationState,
   ConfirmationTargets,
+  KubeResourceStatefulSet,
   ResourcesActionType,
   TemplateState
 } from '../../../shared/shared.const';
 import { ConfirmationDialogService } from '../../../shared/confirmation-dialog/confirmation-dialog.service';
 import { Subscription } from 'rxjs/Subscription';
 import { PublishStatefulsetTplComponent } from '../publish-tpl/publish-tpl.component';
-import { ListEventComponent } from '../list-event/list-event.component';
-import { ListPodComponent } from '../list-pod/list-pod.component';
+import { ListEventComponent } from '../../../shared/list-event/list-event.component';
+import { ListPodComponent } from '../../../shared/list-pod/list-pod.component';
 import { TplDetailService } from '../../../shared/tpl-detail/tpl-detail.service';
 import { AuthService } from '../../../shared/auth/auth.service';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -39,7 +40,7 @@ export class ListStatefulsetComponent implements OnInit, OnDestroy {
   @Input() statefulsetTpls: StatefulsetTemplate[];
   @Input() page: Page;
   @Input() appId: number;
-  @Output() paginate = new EventEmitter<State>();
+  @Output() paginate = new EventEmitter<ClrDatagridStateInterface>();
   @Output() edit = new EventEmitter<boolean>();
   @Output() cloneTpl = new EventEmitter<StatefulsetTemplate>();
   @Output() createTpl = new EventEmitter<boolean>();
@@ -50,8 +51,8 @@ export class ListStatefulsetComponent implements OnInit, OnDestroy {
   listEventComponent: ListEventComponent;
   @ViewChild(PublishStatefulsetTplComponent)
   publishStatefulsetTpl: PublishStatefulsetTplComponent;
-  state: State;
-  currentPage: number = 1;
+  state: ClrDatagridStateInterface;
+  currentPage = 1;
 
   subscription: Subscription;
 
@@ -70,7 +71,7 @@ export class ListStatefulsetComponent implements OnInit, OnDestroy {
       if (message &&
         message.state === ConfirmationState.CONFIRMED &&
         message.source === ConfirmationTargets.STATEFULSET_TPL) {
-        let tplId = message.data;
+        const tplId = message.data;
         this.statefulsetTplService.deleteById(tplId, this.appId)
           .subscribe(
             response => {
@@ -105,7 +106,7 @@ export class ListStatefulsetComponent implements OnInit, OnDestroy {
     this.paginate.emit(this.state);
   }
 
-  refresh(state?: State) {
+  refresh(state?: ClrDatagridStateInterface) {
     this.state = state;
     this.paginate.emit(state);
   }
@@ -115,7 +116,7 @@ export class ListStatefulsetComponent implements OnInit, OnDestroy {
   }
 
   deleteStatefulsetTpl(tpl: StatefulsetTemplate): void {
-    let deletionMessage = new ConfirmationMessage(
+    const deletionMessage = new ConfirmationMessage(
       '删除状态副本集模版确认',
       `你确认删除状态副本集模版${tpl.name}？`,
       tpl.id,
@@ -140,7 +141,7 @@ export class ListStatefulsetComponent implements OnInit, OnDestroy {
   publishTpl(tpl: StatefulsetTemplate) {
     this.statefulsetService.getById(tpl.statefulsetId, this.appId).subscribe(
       status => {
-        let statefulset = status.data;
+        const statefulset = status.data;
         this.publishStatefulsetTpl.newPublishTpl(statefulset, tpl, ResourcesActionType.PUBLISH);
       },
       error => {
@@ -151,7 +152,7 @@ export class ListStatefulsetComponent implements OnInit, OnDestroy {
   offlineStatefulset(tpl: StatefulsetTemplate) {
     this.statefulsetService.getById(tpl.statefulsetId, this.appId).subscribe(
       status => {
-        let statefulset = status.data;
+        const statefulset = status.data;
         this.publishStatefulsetTpl.newPublishTpl(statefulset, tpl, ResourcesActionType.OFFLINE);
       },
       error => {
@@ -172,8 +173,8 @@ export class ListStatefulsetComponent implements OnInit, OnDestroy {
   }
 
   listPod(status: TemplateStatus, tpl: StatefulsetTemplate) {
-    if (status.cluster && status.state != TemplateState.NOT_FOUND) {
-      this.listPodComponent.openModal(status.cluster, tpl.name);
+    if (status.cluster && status.state !== TemplateState.NOT_FOUND) {
+      this.listPodComponent.openModal(status.cluster, tpl.name, KubeResourceStatefulSet);
     }
   }
 

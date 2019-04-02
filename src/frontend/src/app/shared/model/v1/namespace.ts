@@ -1,10 +1,36 @@
+export class NamespaceMetaData {
+  clusterMeta: { [key: string]: ClusterMeta };
+  imagePullSecrets: LocalObjectReference[];
+  env: EnvVar[];
+  serviceAnnotations: {[key: string]: string};
+  ingressAnnotations: {[key: string]: string};
+
+  constructor() {
+    this.imagePullSecrets = [];
+    this.env = [];
+    this.clusterMeta = {};
+    this.ingressAnnotations = {};
+    this.serviceAnnotations = {};
+  }
+}
+
 export class Namespace {
+  id: number;
+  name: string;
+  kubeNamespace: string;
+  deleted: boolean;
+  metaData: string;
+  metaDataObj: NamespaceMetaData;
+  user: string;
+  createTime: Date;
+  updateTime: Date;
+
   constructor() {
     this.metaDataObj = new NamespaceMetaData();
   }
 
   static ParseNamespaceMetaData(obj: any) {
-    let namespaceMetaData = new NamespaceMetaData();
+    const namespaceMetaData = new NamespaceMetaData();
     const metaDataObj = JSON.parse(obj);
     Object.getOwnPropertyNames(metaDataObj).forEach(name => {
       namespaceMetaData[name] = metaDataObj[name];
@@ -13,33 +39,21 @@ export class Namespace {
   }
 
   static emptyObject(): Namespace {
-    let result = new Namespace();
+    const result = new Namespace();
     result.createTime = null;
     result.updateTime = null;
     return result;
   }
-
-  id: number;
-  name: string;
-  deleted: boolean;
-  metaData: string;
-  metaDataObj: NamespaceMetaData;
-  user: string;
-  createTime: Date;
-  updateTime: Date;
 }
 
 export class ResourcesLimit {
   cpu: number;
   memory: number;
 
-  //[NamespaceMetaDataResources:]
   constructor() {
     this.cpu = 0;
     this.memory = 0;
   }
-
-  //[end]
 }
 
 export class ClusterMeta {
@@ -48,24 +62,6 @@ export class ClusterMeta {
   constructor() {
     this.resourcesLimit = new ResourcesLimit();
   }
-}
-
-export class NamespaceMetaData {
-  namespace: string;
-  clusterMeta: { [key: string]: ClusterMeta };
-  imagePullSecrets: LocalObjectReference[];
-  env: EnvVar[];
-
-  constructor() {
-    this.imagePullSecrets = [];
-    this.env = [];
-    this.clusterMeta = {};
-  }
-
-  //[NamespaceMetaData:]
-
-
-  //[end]
 }
 
 export class EnvVar {

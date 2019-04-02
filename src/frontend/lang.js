@@ -52,7 +52,7 @@ if (process.argv[2] === 'format') {
     const matchSet = new Set(['CPU使用']);
     const result = JSON.stringify(defaultValue, null, 2).replace(/([\u4e00-\u9fa5]+)([a-zA-Z]+)/g, function (match, $1, $2) {
       if (matchSet.has(match) || zhSet.has($1) || enSet.has($2)) {
-        return match
+        return match;
       }
       return $1 + ' ' + $2;
     }).replace(/([a-zA-Z]+)([\u4e00-\u9fa5]+)/g, function (match, $1, $2) {
@@ -79,7 +79,7 @@ if (process.argv[2] === 'sort') {
     if (typeof value === 'object') {
       Object.keys(value).sort().forEach(item => {
         obj[item] = sort(value[item]);
-      })
+      });
     } else {
       return value;
     }

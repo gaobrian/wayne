@@ -4,7 +4,7 @@
 # docker --build-arg RELEASE_VERSION=v1.0.0 -t infra/wayne:v1.0.0 .
 
 # build ui
-FROM 360cloud/wayne-ui-builder:v1.0.0 as frontend
+FROM 360cloud/wayne-ui-builder:v1.0.1 as frontend
 
 ARG RAVEN_DSN
 
@@ -33,7 +33,7 @@ COPY --from=frontend /workspace/dist/index.html /go/src/github.com/Qihoo360/wayn
 RUN cd /go/src/github.com/Qihoo360/wayne/src/backend && bee generate docs && bee pack -o /_build
 
 # build release image
-FROM centos:7
+FROM 360cloud/centos:7
 
 RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
 

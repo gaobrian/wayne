@@ -30,12 +30,14 @@ export class CronjobStatus {
   warnings: Event[];
   errNum: number;
 
+  kubeObj: any;
+
   constructor() {
     this.errNum = 0;
   }
 
   static fromPublishStatus(state: PublishStatus) {
-    let dStatus = new CronjobStatus();
+    const dStatus = new CronjobStatus();
     dStatus.id = state.id;
     dStatus.cronjobId = state.resourceId;
     dStatus.templateId = state.templateId;

@@ -100,25 +100,32 @@ export class PersistentVolumeComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.initShow();
-    let cluster = this.route.snapshot.params['cluster'];
     this.clusterService.getNames().subscribe(
       response => {
-        const data = response.data;
-        if (data) {
-          this.clusters = data.map(item => item.name);
-          if (data.length > 0 && !this.cluster || this.clusters.indexOf(this.cluster) === -1) {
-            cluster = cluster ? cluster : data[0].name;
-          }
-          this.jumpTo(cluster);
-        }
+        this.clusters = response.data.map(item => item.name);
+        const initCluster = this.getCluster();
+        this.setCluster(initCluster);
+        this.jumpToHref(initCluster);
       },
       error => this.messageHandlerService.handleError(error)
     );
   }
 
-  jumpTo(cluster: string) {
+  setCluster(cluster?: string) {
     this.cluster = cluster;
-    this.router.navigateByUrl(`admin/kubernetes/persistentvolume/${cluster}`);
+    localStorage.setItem('cluster', cluster);
+  }
+
+  getCluster() {
+    const localStorageCluster = localStorage.getItem('cluster');
+    if (localStorageCluster && this.clusters.indexOf(localStorageCluster.toString()) > -1) {
+      return localStorageCluster.toString();
+    }
+    return this.clusters[0];
+  }
+
+  jumpToHref(cluster: string) {
+    this.setCluster(cluster);
     this.retrieve();
   }
 
@@ -160,7 +167,7 @@ export class PersistentVolumeComponent implements OnInit, OnDestroy {
                 }
               }
               for (const pv of pvs) {
-                if (isNotEmpty(pv.spec.rbd) && rbdImages[pv.spec.rbd.image] && rbdImages[pv.spec.rbd.image].type == 'rbd') {
+                if (isNotEmpty(pv.spec.rbd) && rbdImages[pv.spec.rbd.image] && rbdImages[pv.spec.rbd.image].type === 'rbd') {
                   pv.spec.rbd.created = true;
                 } else if (isNotEmpty(pv.spec.cephfs)) {
                   const name = this.getCephfsName(pv.spec.cephfs.path);

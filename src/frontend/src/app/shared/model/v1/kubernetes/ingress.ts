@@ -61,7 +61,7 @@ export class IngressStatus {
 }
 
 export class IngressPath {
-  backend: IngressBackend
+  backend: IngressBackend;
   path: string;
 }
 
@@ -144,13 +144,13 @@ export class IntOrString {
 }
 export class IngressBackend {
   serviceName: string;
-  servicePort: IntOrString;
+  servicePort: number;
 
 
   static emptyObject(): IngressBackend {
     const result = new IngressBackend();
     result.serviceName = '';
-    result.servicePort = IntOrString.emptyObject();
+    result.servicePort = 0;
     return result;
   }
   constructor(init?: IngressBackend) {

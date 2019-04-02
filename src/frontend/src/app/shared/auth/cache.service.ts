@@ -44,17 +44,7 @@ export class CacheService {
   }
 
   get kubeNamespace(): string {
-    let err = 'namespace元数据有误，请联系管理员！';
-    try {
-      if (this.namespace.metaData) {
-        let metaData = JSON.parse(this.namespace.metaData);
-        return metaData.namespace;
-      } else {
-        this.alertError(err);
-      }
-    } catch (e) {
-      this.alertError(err);
-    }
+    return this.namespace.kubeNamespace;
   }
 
   alertError(err: string) {
