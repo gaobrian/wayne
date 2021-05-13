@@ -1,4 +1,4 @@
-FROM ubuntu:14.04
+FROM ubuntu:trusty-20190425
 MAINTANER Igor Mihalik <igor.mihalik@gmail.com>
 
 RUN apt-get update -q
