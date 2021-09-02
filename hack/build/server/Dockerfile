@@ -1,4 +1,4 @@
-FROM golang:1.10
+FROM golang:1.16.6
 
 RUN go get github.com/astaxie/beego \
         && go get github.com/beego/bee
